@@ -1,115 +1,110 @@
-import { Col, Table, Checkbox, Button, Tag, Radio } from "antd";
-import type { ColumnsType } from 'antd/es/table';
+import { Radio, Button } from "antd";
 import { useState } from "react";
 import { TodoState } from "../../constants/type";
 import { useAppDispatch, useAppSelector } from "../../hooks/hook";
-import { addNewTodo, updateTodo } from "../../redux/todoSlice";
+import { addNewTodo, deleteTodo, updateTodo } from "../../redux/todoSlice";
 import { v4 as uuidv4} from "uuid";
+import { DataGrid, GridColDef } from '@mui/x-data-grid';
+import DeleteIcon from '@material-ui/icons/Delete';
 
 const Home = () => {
-
-    const columns: ColumnsType<TodoState> = [
-        {
-          title: 'Name',
-          dataIndex: 'name',
-          key: 'name',
-          render: data => <p className=" font-bold">{data}</p>
-        },
-        {
-          title: 'Status',
-          dataIndex: 'isCompleted',
-          key: 'isCompleted',
-          render: data => {
-            
-            return (<Checkbox 
-            defaultChecked={data} 
-            className="px-4 font-bold"
-            onChange={(e) => !data}
-            >{data ? "Completed" : "Doing"}</Checkbox>)}
-        },
-        {
-          title: 'Level',
-          dataIndex: 'level',
-          key: 'level',
-          render: data => {switch(data) {
-            case "easy": 
-              return <Tag color="green">{data}</Tag>
-            case "medium":
-              return <Tag color="gold">{data}</Tag>
-            case "hard":
-              return <Tag color="red">{data}</Tag>
-            default:
-              return <Tag color="purple">unknown</Tag>
-          }}
-        },
-    ]
+    const column: GridColDef[] = [
+      { field: 'name', headerName: 'Name', width: 300, renderCell: (params) => <p className="cursor-pointer" onClick={() => handleClickName(params.row)}>{params.value}</p> },
+      { field: 'isCompleted', headerName: 'Status', width: 150, renderCell: (params) => params.value ? "completed" : "doing"},
+      { field: 'level', headerName: 'Level', width: 150 },
+      { field: 'id', headerName: 'Action', width: 150, renderCell: (params) => <div className="cursor-pointer" onClick={() => handleDeleteTodo(params.value)}><DeleteIcon/></div>}
+  ]
         const dispatch = useAppDispatch();
+
         const todoList = useAppSelector((state) => state.todo.todoList);
+
         const [todoInfo, setTodoInfo]  = useState<TodoState>({
-          key: "",
+          id: "",
           isCompleted: false,
           name: "",
           level: undefined,
         });
+
+        const [isDuplicate, setIsDuplicate] = useState<boolean>(false);
+
+        const handleClickName = (data: TodoState) => {
+          setTodoInfo(data)
+        }
+
         const handleAddTodo = () => {
-          console.log(todoInfo);
-            if(todoInfo.name !== "" && todoInfo.level !== undefined){
-            for(const e of todoList) {
-              if(e.name !== todoInfo.name) {
-                dispatch(addNewTodo({...todoInfo, key: uuidv4()}));
-                clearInput();
-                return;
-              }
-              else {
-                handleEditTodo();
-                clearInput();
-                return;
-              }
-            }
-          }
-            else {
+            if(todoInfo.name === "" || todoInfo.level === undefined){
               clearInput();
+              return;
             }
+            for(const e of todoList) {
+              if(e.name === todoInfo.name) {
+                setIsDuplicate(true);
+              }
+            }  
+            if(isDuplicate === true)
+            {
+              handleEditTodo();
+              return;
+            }                     
+            dispatch(addNewTodo({...todoInfo, id: uuidv4()}));
+            clearInput();
           }
         const handleEditTodo = () => {
           dispatch(updateTodo(todoInfo));
           clearInput();
         }
+
+        const handleDeleteTodo = (id: string) => {
+          dispatch(deleteTodo({id: id}))
+        }
+
         const clearInput = () => {
           setTodoInfo({
-            key: "",
+            id: "",
             name: "",
             level: undefined,
             isCompleted: false,
           })
         }
     return ( 
-        <div>
-            <Col className=" text-3xl font-bold text-center mt-10">To do list</Col>
+      <div>
+        <div className="flex flex-col items-center justify-center">
+            <h2 className=" text-3xl font-bold text-center mt-10">To do list</h2>
             <input 
               value={todoInfo.name} 
               placeholder="Name" 
               onChange={(e) => {setTodoInfo({...todoInfo, name: e.target.value })}}
-              className="ml-[40%] mt-10 "
+              className="text-center mt-10 "
               ></input>
-            <Button type="primary" onClick={handleAddTodo} className="ml-2 p-2 bg-blue-500 rounded-md">Add a todo</Button>
+              <Radio.Group 
+                onChange={(e) => setTodoInfo({...todoInfo, isCompleted: e.target.value})} 
+                className=" items-center justify-center flex py-4">
+              <Radio value={true} className="px-2"> Completed</Radio>
+              <Radio value={false} className="px-2"> Doing</Radio>
+            </Radio.Group>
             
-            <Radio.Group onChange={(e) => setTodoInfo({...todoInfo, level: e.target.value})} className=" items-center justify-center flex flex-col">
-              <Radio value="easy">easy</Radio>
-              <Radio value="medium">medium</Radio>
-              <Radio value="hard">hard</Radio>
+            
+            <Radio.Group 
+              onChange={(e) => setTodoInfo({...todoInfo, level: e.target.value})}
+              className=" items-center justify-center flex py-4">
+              <Radio value="easy" className="px-2"> easy</Radio>
+              <Radio value="medium"className="px-2"> medium</Radio>
+              <Radio value="hard"className="px-2"> hard</Radio>
             </Radio.Group>
 
-            <Table 
-                dataSource={todoList}
-                columns={columns}
-                size="middle"
-                bordered
-                className="border-zinc-800"
-            />
-
-            
+            <Button 
+              type="primary" 
+              onClick={handleAddTodo} 
+              className="w-auto p-2 mb-4 text-white bg-blue-500 rounded-md">
+                Add a todo
+              </Button>
         </div>
+          <div>
+              <div style={{ height: 350, width: '100%' }}>
+                <DataGrid rows={todoList} columns={column}></DataGrid>
+              </div>
+          </div>
+      </div>
      );
 }
  

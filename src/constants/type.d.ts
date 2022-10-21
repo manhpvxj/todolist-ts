@@ -4,7 +4,7 @@ export type initialStateType = {
 }
 
 export type TodoState = {
-    key : string,
+    id : string,
     isCompleted: boolean,
     name: string,
     level: "easy" | "medium" | "hard" | undefined,
