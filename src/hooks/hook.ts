@@ -1,5 +1,16 @@
+import { useQuery } from 'react-query';
 import { TypedUseSelectorHook, useDispatch, useSelector } from 'react-redux';
-import { RootState, AppDispatch } from "../redux/store";
+import { AppDispatch, RootState } from "../redux/store";
+import { getList } from "../services/TodoListService";
+
+
+export const useGetList = () => {
+    return useQuery("listtodo", () => getList(), {
+        cacheTime: Infinity,
+        refetchOnWindowFocus: false,
+        staleTime: Infinity,
+    })
+}
 
 //useDispatch hook with types.
 export const useAppDispatch = () => useDispatch<AppDispatch>();

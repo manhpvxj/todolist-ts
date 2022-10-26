@@ -1,6 +1,8 @@
 
+
+
 export type initialStateType = {
-    todoList: TodoState[];
+    data: TodoState[];
 }
 
 export type TodoState = {
